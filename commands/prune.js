@@ -3,6 +3,8 @@ module.exports = {
   description: 'Prune up to 99 messages',
   usage: `<amount of mesages to delete>`,
   cooldown: 5,
+  guildOnly: true,
+  permissions: 'MANAGE_MESSAGES',
   execute(message, args) {
     const amount = parseInt(args[0]) + 1;
 

@@ -5,6 +5,8 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const { prefix } = require('./config.json');
 
+const Sequelize = require('sequelize');
+
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
 
@@ -17,21 +19,111 @@ for (const file of commandFiles) {
   client.commands.set(command.name, command);
 }
 
+// Connection information
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+host: 'localhost',
+dialect: 'sqlite',
+logging: false,
+// Sqlite only
+storage: 'database.sqlite',
+});
+
+
+
+/*
+* equivalent to CREATE table
+*/
+
+const Members = sequelize.define('members', {
+uniqueID: {
+  type: Sequelize.INTEGER,
+  unique: true,
+},
+name: {
+  type: Sequelize.STRING,
+},
+surname: {
+  type: Sequelize.STRING,
+},
+DiscordID: {
+  type: Sequelize.INTEGER,
+  unique: true,
+},
+usernameCTU: {
+  type: Sequelize.STRING,
+  unique: true,
+},
+accessLevel: {
+  type: Sequelize.INTEGER,
+},
+xp: {
+  type: Sequelize.INTEGER,
+  defaultValue: 0,
+},
+email: {
+  type: Sequelize.STRING,
+  unique: true,
+},
+dob: {
+  type: Sequelize.DATEONLY
+},
+phone: {
+  type: Sequelize.INTEGER
+},
+birthPlace: {
+  type: Sequelize.TEXT
+},
+residence: {
+  type: Sequelize.TEXT
+},
+});
+
+
+        // Client finished loading
+
 client.once('ready', () => {
-  console.log('Ready!');
+  console.log('The bot is online!');
+  Members.sync();
 });
 
 client.login(process.env.TOKEN);
 
-client.on('message', message => {
+        // Waiting for messages
+
+client.on('message', async (message) => {
   if (!message.content.startsWith(prefix) || message.author.bot) return;
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const commandName = args.shift().toLowerCase();
 
+  if (commandName === 'addmember') {
+    try {
+      const member = await Members.create({
+        uniqueID: args[0],
+        name: args[1],
+        surname: args[2],
+      });
+      return message.reply('member added!');
+    } catch (e) {
+      if(e.uniqueID === 'SequelizeUniqueConstraintError') {
+        return message.reply('That user already exists.');
+      }
+      return message.reply('An error occured while adding the member.');
+    }
+  } else if (commandName === 'verify') {
+    const id = args[0];
+    const member = await Members.findOne({ where: { uniqueID: id } });
+    if (member) {
+      return message.channel.send(`The member with the ID ${id} is named ${member.name}.`);
+    }
+    return message.channel.send(`Member with ID ${id} not found.`);
+  } 
+
+
   if(!client.commands.has(commandName)) return;
 
   const command = client.commands.get(commandName);
+
 
   if (command.args && !args.length) {
     return message.channel.send(`You didn\'t provide any arguments, ${message.author}!`);
