@@ -1,6 +1,8 @@
 module.exports = {
   name: 'prune',
   description: 'Prune up to 99 messages',
+  usage: `<amount of mesages to delete>`,
+  cooldown: 5,
   execute(message, args) {
     const amount = parseInt(args[0]) + 1;
 
