@@ -33,6 +33,10 @@ client.on('message', message => {
 
   const command = client.commands.get(commandName);
 
+  if (command.args && !args.length) {
+    return message.channel.send(`You didn\'t provide any arguments, ${message.author}!`);
+  }
+
   if (command.guildOnly && message.channel.type === 'dm') {
     return message.reply('I can\'t execute that command inside DMs!');
   }
