@@ -2,7 +2,7 @@ module.exports = {
   name: 'ping',
   cooldown: 5,
   description: 'Ping!',
-  execute(message, args) {
+  run: async (message, args, Members, Reaction, client) => {
     message.channel.send('Pong.');
   },
-};
+}

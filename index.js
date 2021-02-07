@@ -5,6 +5,8 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const { prefix } = require('./config.json');
 
+const Sequelize = require('sequelize');
+
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
 
@@ -17,13 +19,95 @@ for (const file of commandFiles) {
   client.commands.set(command.name, command);
 }
 
+// Connection information
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+host: 'localhost',
+dialect: 'sqlite',
+logging: false,
+// Sqlite only
+storage: 'database.sqlite',
+});
+
+
+
+/*
+* equivalent to CREATE table
+*/
+
+const Members = sequelize.define('members', {
+uniqueID: {
+  type: Sequelize.INTEGER,
+  unique: true,
+},
+name: {
+  type: Sequelize.STRING,
+},
+surname: {
+  type: Sequelize.STRING,
+},
+DiscordID: {
+  type: Sequelize.INTEGER,
+  unique: true,
+},
+usernameCTU: {
+  type: Sequelize.STRING,
+  unique: true,
+},
+accessLevel: {
+  type: Sequelize.INTEGER,
+},
+xp: {
+  type: Sequelize.INTEGER,
+  defaultValue: 0,
+},
+email: {
+  type: Sequelize.STRING,
+  unique: true,
+},
+dob: {
+  type: Sequelize.DATEONLY
+},
+phone: {
+  type: Sequelize.INTEGER
+},
+birthPlace: {
+  type: Sequelize.TEXT
+},
+residence: {
+  type: Sequelize.TEXT
+},
+});
+
+
+const Reaction = sequelize.define('reaction', {
+  roleID: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+  },
+  emoteID: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+  },
+  messageID: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+  },
+});
+
+        // Client finished loading
+
 client.once('ready', () => {
-  console.log('Ready!');
+  console.log('The bot is online!');
+  Members.sync();
+  Reaction.sync();
 });
 
 client.login(process.env.TOKEN);
 
+        // Waiting for messages
+
 client.on('message', message => {
+
   if (!message.content.startsWith(prefix) || message.author.bot) return;
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
@@ -32,6 +116,10 @@ client.on('message', message => {
   if(!client.commands.has(commandName)) return;
 
   const command = client.commands.get(commandName);
+
+  if (command.args && !args.length) {
+    return message.channel.send(`You didn\'t provide any arguments, ${message.author}!`);
+  }
 
   if (command.guildOnly && message.channel.type === 'dm') {
     return message.reply('I can\'t execute that command inside DMs!');
@@ -76,7 +164,7 @@ client.on('message', message => {
   setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
   try {
-    command.execute(message, args);
+    command.run(message, args, Members, Reaction, client);
   } catch (error) {
     console.error(error);
     message.reply('an error occured while trying to execute this command.');

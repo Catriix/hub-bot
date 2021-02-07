@@ -3,7 +3,9 @@ module.exports = {
   description: 'Prune up to 99 messages',
   usage: `<amount of mesages to delete>`,
   cooldown: 5,
-  execute(message, args) {
+  guildOnly: true,
+  permissions: 'MANAGE_MESSAGES',
+  run: async (message, args, Members, Reaction, client) => {
     const amount = parseInt(args[0]) + 1;
 
     if(isNaN(amount)) {
@@ -17,4 +19,4 @@ module.exports = {
       message.channel.send('an error occured while trying to prune messages in this channel.');
     });
   },
-};
+}
