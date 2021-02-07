@@ -3,7 +3,7 @@ const { prefix } = require('../config.json');
 module.exports = {
   name: 'help',
   description: 'Lists the commands',
-  execute(message, args) {
+  run: async (message, args, Members, Reaction, client) => {
     const data = [];
     const { commands } = message.client;
 
@@ -40,4 +40,4 @@ module.exports = {
 
     message.channel.send(data, { split: true});
   },
-};
+}

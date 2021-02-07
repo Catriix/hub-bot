@@ -1,7 +1,7 @@
 module.exports = {
   name: 'reload',
   description: 'Reloads a command',
-  execute(message, args) {
+  run: async (message, args, Members, Reaction, client) => {
     const commandName = args[0].toLowerCase();
     const command = message.client.commands.get(commandName)
       || message.client.commands.find(cmd => cmd.aliases && cmd.aliases.includes(commandName));
@@ -12,11 +12,11 @@ module.exports = {
 
     try {
       const newCommand = require(`./${commandName}.js`);
-      message.client.commands.set(newCommand.name, newCommand);
-      message.channel.send(`The command \`${command.name}\` was successfully reloaded!`); 
+      message.client.commands.set(newCommand.config.name, newCommand);
+      message.channel.send(`The command \`${command.name}\` was successfully reloaded!`);
     } catch (error) {
       console.error(error);
       message.channel.send(`There was an error while reloading the command \`${commandName}\`:\n\`${error.message}\``);
     }
-  }
+  },
 }

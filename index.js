@@ -79,51 +79,43 @@ residence: {
 });
 
 
+const Reaction = sequelize.define('reaction', {
+  roleID: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+  },
+  emoteID: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+  },
+  messageID: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+  },
+});
+
         // Client finished loading
 
 client.once('ready', () => {
   console.log('The bot is online!');
   Members.sync();
+  Reaction.sync();
 });
 
 client.login(process.env.TOKEN);
 
         // Waiting for messages
 
-client.on('message', async (message) => {
+client.on('message', message => {
+
   if (!message.content.startsWith(prefix) || message.author.bot) return;
 
   const args = message.content.slice(prefix.length).trim().split(/ +/);
   const commandName = args.shift().toLowerCase();
 
-  if (commandName === 'addmember') {
-    try {
-      const member = await Members.create({
-        uniqueID: args[0],
-        name: args[1],
-        surname: args[2],
-      });
-      return message.reply('member added!');
-    } catch (e) {
-      if(e.uniqueID === 'SequelizeUniqueConstraintError') {
-        return message.reply('That user already exists.');
-      }
-      return message.reply('An error occured while adding the member.');
-    }
-  } else if (commandName === 'verify') {
-    const id = args[0];
-    const member = await Members.findOne({ where: { uniqueID: id } });
-    if (member) {
-      return message.channel.send(`The member with the ID ${id} is named ${member.name}.`);
-    }
-    return message.channel.send(`Member with ID ${id} not found.`);
-  } 
-
-
   if(!client.commands.has(commandName)) return;
 
   const command = client.commands.get(commandName);
-
 
   if (command.args && !args.length) {
     return message.channel.send(`You didn\'t provide any arguments, ${message.author}!`);
@@ -172,7 +164,7 @@ client.on('message', async (message) => {
   setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
   try {
-    command.execute(message, args);
+    command.run(message, args, Members, Reaction, client);
   } catch (error) {
     console.error(error);
     message.reply('an error occured while trying to execute this command.');

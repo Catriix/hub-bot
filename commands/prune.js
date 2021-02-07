@@ -5,7 +5,7 @@ module.exports = {
   cooldown: 5,
   guildOnly: true,
   permissions: 'MANAGE_MESSAGES',
-  execute(message, args) {
+  run: async (message, args, Members, Reaction, client) => {
     const amount = parseInt(args[0]) + 1;
 
     if(isNaN(amount)) {
@@ -19,4 +19,4 @@ module.exports = {
       message.channel.send('an error occured while trying to prune messages in this channel.');
     });
   },
-};
+}
