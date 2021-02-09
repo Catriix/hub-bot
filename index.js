@@ -6,8 +6,9 @@ const Discord = require('discord.js');
 const { prefix } = require('./config.json');
 
 const Sequelize = require('sequelize');
+const { Op } = require ('sequelize');
 
-const client = new Discord.Client();
+const client = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION']});
 client.commands = new Discord.Collection();
 
 const cooldowns = new Discord.Collection();
@@ -81,15 +82,15 @@ residence: {
 
 const Reaction = sequelize.define('reaction', {
   roleID: {
-    type: Sequelize.INTEGER,
+    type: Sequelize.STRING,
     allowNull: false,
   },
   emoteID: {
-    type: Sequelize.INTEGER,
+    type: Sequelize.STRING,
     allowNull: false,
   },
   messageID: {
-    type: Sequelize.INTEGER,
+    type: Sequelize.STRING,
     allowNull: false,
   },
 });
@@ -169,4 +170,60 @@ client.on('message', message => {
     console.error(error);
     message.reply('an error occured while trying to execute this command.');
   }
-});
+})
+
+client.on('messageReactionAdd', async (reaction, user) => {
+  if(reaction.message.partial) {
+    try {
+      await reaction.message.fetch();
+    } catch (error) {
+      console.error('Something went wrong when fetching the message: ', error);
+      return;
+    }
+  }
+  if(user.bot) return;
+
+  const emote = reaction.emoji.id;
+
+
+
+  var entry = await Reaction.findOne({
+    where: {
+      [Op.and]: [{ emoteID: emote }, { messageID: reaction.message.id }]
+    }
+  });
+
+
+  if (entry) {
+    const role = reaction.message.guild.roles.cache.get(entry.roleID);
+    const member = reaction.message.guild.members.cache.find(member=>member.id===user.id);
+    member.roles.add(role);
+  }
+
+})
+
+client.on('messageReactionRemove', async (reaction, user) => {
+  if(reaction.message.partial) {
+    try {
+      await reaction.message.fetch();
+    } catch (error) {
+      console.error('Something went wrong when fetching the message: ', error);
+      return;
+    }
+  }
+  if(user.bot) return;
+
+  const emote = reaction.emoji.id;
+
+  const entry = await Reaction.findOne({
+    where: {
+       [Op.and]: [{ emoteID: emote }, { messageID: reaction.message.id }]
+     }
+  });
+  if (entry) {
+    const role = reaction.message.guild.roles.cache.find(role=>role.id===entry.roleID);
+    const member = reaction.message.guild.members.cache.find(member=>member.id===user.id);
+    member.roles.remove(role);
+  }
+
+})
