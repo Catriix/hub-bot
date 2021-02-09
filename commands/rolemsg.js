@@ -20,6 +20,10 @@ module.exports = {
     emojID = emojID.split(':');
     emojID = emojID[2];
 
+    if(!emojID) {
+      emojID = emoji;
+    }
+
     message.channel.messages.fetch({around: msgID, limit: 1}).then(messages => {
       messages.first().react(emojID);
     });
